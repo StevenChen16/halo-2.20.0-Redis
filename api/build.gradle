@@ -71,6 +71,9 @@ dependencies {
     api "io.github.resilience4j:resilience4j-spring-boot3"
     api "io.github.resilience4j:resilience4j-reactor"
 
+    api 'org.springframework.boot:spring-boot-starter-data-redis'
+    api 'org.springframework.boot:spring-boot-starter-cache'
+
     api "com.j256.two-factor-auth:two-factor-auth"
 
     runtimeOnly 'io.r2dbc:r2dbc-h2'
