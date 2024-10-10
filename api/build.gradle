@@ -83,8 +83,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'io.projectreactor:reactor-test'
-
-    implementation 'io.lettuce.core:lettuce-core' // 使用 Lettuce 作为 Redis 客户端
 }
 
 java {
