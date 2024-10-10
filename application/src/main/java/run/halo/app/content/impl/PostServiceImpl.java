@@ -47,7 +47,7 @@ import run.halo.app.infra.Condition;
 import run.halo.app.infra.ConditionStatus;
 
 import org.springframework.data.redis.connection.stream.MapRecord;
-import org.springframework.data.redis.connection.stream.RecordId;
+import org.springframework.data.redis.connection.stream.StreamRecords;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.stream.StreamRecords;
 
