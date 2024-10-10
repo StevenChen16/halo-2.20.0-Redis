@@ -53,7 +53,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.connection.stream.StreamRecords;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer.StreamMessageListenerContainerOptions;
-import org.springframework.data.redis.stream.StreamReadRequest;
 
 /**
  * A default implementation of {@link PostService}.
@@ -455,8 +454,7 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
         StreamMessageListenerContainer<String, MapRecord<String, Object, Object>> listenerContainer =
                 StreamMessageListenerContainer.create(redisTemplate.getConnectionFactory(), options);
 
-        listenerContainer.receive(StreamReadRequest.builder(STREAM_KEY)
-                .build(), (message) -> {
+        listenerContainer.receive(STREAM_KEY, (message) -> {
             log.info("Received message: {}", message);
             // Handle the message here
         });
