@@ -444,4 +444,23 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
                         .filter(OptimisticLockingFailureException.class::isInstance))
             );
     }
+
+    private void configureRedisListener() {
+        StreamMessageListenerContainerOptions<String, MapRecord<String, Object, Object>> options =
+                StreamMessageListenerContainerOptions.builder()
+                        .batchSize(10)
+                        .pollTimeout(Duration.ofSeconds(1))
+                        .build();
+
+        StreamMessageListenerContainer<String, MapRecord<String, Object, Object>> listenerContainer =
+                StreamMessageListenerContainer.create(redisTemplate.getConnectionFactory(), options);
+
+        listenerContainer.receive(StreamReadRequest.builder(STREAM_KEY)
+                .build(), (message) -> {
+            log.info("Received message: {}", message);
+            // Handle the message here
+        });
+
+        listenerContainer.start();
+    }
 }
