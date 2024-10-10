@@ -30,11 +30,13 @@ import run.halo.app.content.PostQuery;
 import run.halo.app.content.PostRequest;
 import run.halo.app.content.PostService;
 import run.halo.app.content.Stats;
+import run.halo.app.core.counter.CounterService;
+import run.halo.app.core.counter.MeterUtils;
 import run.halo.app.core.extension.content.Category;
 import run.halo.app.core.extension.content.Post;
 import run.halo.app.core.extension.content.Snapshot;
 import run.halo.app.core.extension.content.Tag;
-import run.halo.app.core.extension.service.UserService;
+import run.halo.app.core.user.service.UserService;
 import run.halo.app.extension.ListOptions;
 import run.halo.app.extension.ListResult;
 import run.halo.app.extension.MetadataOperator;
@@ -43,8 +45,11 @@ import run.halo.app.extension.Ref;
 import run.halo.app.extension.router.selector.FieldSelector;
 import run.halo.app.infra.Condition;
 import run.halo.app.infra.ConditionStatus;
-import run.halo.app.metrics.CounterService;
-import run.halo.app.metrics.MeterUtils;
+
+import org.springframework.data.redis.connection.stream.MapRecord;
+import org.springframework.data.redis.connection.stream.RecordId;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.stream.StreamRecords;
 
 /**
  * A default implementation of {@link PostService}.
@@ -61,12 +66,14 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
     private final CategoryService categoryService;
 
     public PostServiceImpl(ReactiveExtensionClient client, CounterService counterService,
-        UserService userService, CategoryService categoryService) {
+                           UserService userService, CategoryService categoryService,
+                           RedisTemplate<String, Object> redisTemplate) {
         super(client);
         this.client = client;
         this.counterService = counterService;
         this.userService = userService;
         this.categoryService = categoryService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -305,7 +312,10 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
             spec.setHeadSnapshot(spec.getBaseSnapshot());
         }
         spec.setReleaseSnapshot(spec.getHeadSnapshot());
-        return client.update(post);
+
+        // 发布文章并在成功后发送 Redis Stream 消息
+        return client.update(post)
+            .doOnSuccess(updatedPost -> sendPostPublishedEvent(updatedPost));
     }
 
     @Override
@@ -377,6 +387,15 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
                     .flatMap(client::delete)
                     .flatMap(deleted -> restoredContent(baseSnapshotName, deleted));
             });
+    }
+
+    @Override
+    public Mono<Post> recycleBy(String postName, String username) {
+        return getByUsername(postName, username)
+            .flatMap(post -> updatePostWithRetry(post, record -> {
+                record.getSpec().setDeleted(true);
+                return record;
+            }));
     }
 
     private Mono<Post> updatePostWithRetry(Post post, UnaryOperator<Post> func) {
