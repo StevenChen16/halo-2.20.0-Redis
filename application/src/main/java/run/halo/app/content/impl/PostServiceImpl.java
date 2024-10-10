@@ -5,6 +5,7 @@ import static run.halo.app.extension.index.query.QueryFactory.in;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -316,6 +317,25 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
         // 发布文章并在成功后发送 Redis Stream 消息
         return client.update(post)
             .doOnSuccess(updatedPost -> sendPostPublishedEvent(updatedPost));
+    }
+
+    // 使用 Redis Stream 发布消息
+    private void sendPostPublishedEvent(Post post) {
+        try {
+            MapRecord<String, Object, Object> record = StreamRecords.newRecord()
+                .in(STREAM_KEY) // Redis Stream 的 Key
+                .ofMap(Map.of(
+                    "postId", post.getMetadata().getName(),
+                    "title", post.getSpec().getTitle(),
+                    "publishedAt", post.getMetadata().getCreationTimestamp().toString()
+                ));
+
+            // 将消息发布到 Redis Stream
+            RecordId recordId = redisTemplate.opsForStream().add(record);
+            log.info("Published post event to Redis Stream with ID: {}", recordId);
+        } catch (Exception e) {
+            log.error("Failed to publish post event to Redis Stream", e);
+        }
     }
 
     @Override
