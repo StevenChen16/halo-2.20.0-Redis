@@ -79,7 +79,7 @@ dependencies {
     annotationProcessor "org.springframework:spring-context-indexer"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'io.lettuce.core:lettuce-core' // 使用 Lettuce 作为 Redis 客户端
+    implementation 'io.lettuce:lettuce-core:6.3.2.RELEASE' // 使用 Lettuce 作为 Redis 客户端
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'io.projectreactor:reactor-test'
 
