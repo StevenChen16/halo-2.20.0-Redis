@@ -455,7 +455,7 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
         StreamMessageListenerContainer<String, MapRecord<String, Object, Object>> listenerContainer =
                 StreamMessageListenerContainer.create(redisTemplate.getConnectionFactory(), options);
 
-        listenerContainer.receive(STREAM_KEY, (message) -> {
+        listenerContainer.receive(StreamOffset.fromStart(STREAM_KEY), (message) -> {
             log.info("Received message: {}", message);
             // Handle the message here
         });
