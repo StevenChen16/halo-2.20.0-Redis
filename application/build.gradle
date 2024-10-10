@@ -79,7 +79,9 @@ dependencies {
     annotationProcessor "org.springframework:spring-context-indexer"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'io.lettuce:lettuce-core:6.3.2.RELEASE' // 使用 Lettuce 作为 Redis 客户端
+    implementation 'io.lettuce.core:lettuce-core:6.3.2.RELEASE' // 使用 Lettuce 作为 Redis 客户端
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Spring Redis 支持
+
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'io.projectreactor:reactor-test'
 
@@ -87,6 +89,7 @@ dependencies {
     runtimeOnly 'org.webjars.npm:jsencrypt:3.3.2'
     runtimeOnly 'org.webjars.npm:normalize.css:8.0.1'
 }
+
 
 tasks.register('createChecksums', Checksum) {
     dependsOn tasks.named('bootJar')
