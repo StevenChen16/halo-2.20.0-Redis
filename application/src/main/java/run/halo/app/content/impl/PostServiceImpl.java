@@ -65,6 +65,8 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
     private final CounterService counterService;
     private final UserService userService;
     private final CategoryService categoryService;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final String STREAM_KEY = "post_stream";
 
     public PostServiceImpl(ReactiveExtensionClient client, CounterService counterService,
                            UserService userService, CategoryService categoryService,
