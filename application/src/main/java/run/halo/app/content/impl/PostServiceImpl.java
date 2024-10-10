@@ -5,7 +5,6 @@ import static run.halo.app.extension.index.query.QueryFactory.in;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -13,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
@@ -47,13 +45,11 @@ import run.halo.app.extension.Ref;
 import run.halo.app.extension.router.selector.FieldSelector;
 import run.halo.app.infra.Condition;
 import run.halo.app.infra.ConditionStatus;
-
-import org.springframework.data.redis.connection.stream.MapRecord;
-import org.springframework.data.redis.connection.stream.RecordId;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.connection.stream.StreamRecords;
-import org.springframework.data.redis.stream.StreamMessageListenerContainer;
-import org.springframework.data.redis.stream.StreamMessageListenerContainer.StreamMessageListenerContainerOptions;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisStreamCommands;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A default implementation of {@link PostService}.
@@ -80,6 +76,20 @@ public class PostServiceImpl extends AbstractContentService implements PostServi
         this.userService = userService;
         this.categoryService = categoryService;
         this.redisTemplate = redisTemplate;
+    }
+
+    private void publishToRedisStream(Post post) {
+        try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
+            RedisStreamCommands<String, String> syncCommands = connection.sync();
+            Map<String, String> message = new HashMap<>();
+            message.put("postId", post.getMetadata().getName());
+            message.put("title", post.getSpec().getTitle());
+            message.put("publishTime", Instant.now().toString());
+            syncCommands.xadd("post_stream", message);
+            log.info("Published post '{}' to Redis Stream.", post.getMetadata().getName());
+        } catch (Exception e) {
+            log.error("Failed to publish post '{}' to Redis Stream: {}", post.getMetadata().getName(), e.getMessage(), e);
+        }
     }
 
     @Override
